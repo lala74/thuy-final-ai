@@ -2,6 +2,7 @@ import base64
 import io
 from io import BytesIO
 
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -157,6 +158,15 @@ def plot_data_and_predictions(recent_data, predictions, labels):
 
 
 def plot_data_and_predictions_to_base_64(recent_data, predictions, labels):
+    # Custom vibrant colors for each label
+    colors = {
+        "Low": "#00FFFF",  # Cyan
+        "Open": "#32CD32",  # Lime
+        "High": "#FFA500",  # Orange
+        "Close": "#FF6347",  # Red
+        "Adjusted Close": "#800080",  # Purple
+    }
+
     # Combine recent data and predicted data
     pred_df = pd.DataFrame(predictions[0], columns=labels)
     pred_df.index += len(recent_data)  # Adjust index to follow recent data
@@ -165,43 +175,88 @@ def plot_data_and_predictions_to_base_64(recent_data, predictions, labels):
         [recent_data[labels].reset_index(drop=True), pred_df], ignore_index=True
     )
 
-    # Create a plot
+    # Plot the combined data with the new vibrant colors
     plt.figure(figsize=(12, 8))
     for label in labels:
-        # Plot recent data in blue
+        # Plot recent and predicted data together with a unique color for each label
         plt.plot(
-            range(len(recent_data)),
-            combined_data[label][: len(recent_data)],
-            color="blue",
-            label=f"Recent {label}",
+            range(len(combined_data)),
+            combined_data[label],
+            color=colors[label],  # Apply custom color
+            label=f"{label}",
+            linewidth=2,  # Make the line thicker for better visibility
         )
 
-        # Plot predicted data in red
-        plt.plot(
-            range(len(recent_data) - 1, len(combined_data)),
-            combined_data[label][len(recent_data) - 1 :],
-            color="red",
-            label=f"Predicted {label}",
-        )
-        plt.axvline(x=len(recent_data) - 1, color="black", linestyle="--")
+    # Plot the dashed line where prediction begins
+    plt.axvline(
+        x=len(recent_data) - 1, color="black", linestyle="--", label="Prediction Start"
+    )
 
-        # Customize the plot
-        plt.title(f"Recent and Predicted Data - {label}")
-        plt.xlabel("Days")
-        plt.ylabel("Values")
-        plt.legend(loc="best")
-        plt.grid(True)
+    # Customize the plot
+    plt.title("Recent and Predicted Data")
+    plt.xlabel("Days")
+    plt.ylabel("Values")
+    plt.legend(loc="best")
+    plt.grid(True)
+
+    # Save the plot as an image and return its base64 encoded string
+    img_base64 = save_plot_to_base64()
+    return img_base64
+
+    # # Define colors for each label (unique color for each label)
+    # color_map = cm.get_cmap(
+    # "tab10", len(labels)
+    # )  # Use 'tab10' colormap for distinct colors
+    # colors = [color_map(i) for i in range(len(labels))]
+
+    # # Combine recent data and predicted data
+    # pred_df = pd.DataFrame(predictions[0], columns=labels)
+    # pred_df.index += len(recent_data)  # Adjust index to follow recent data
+
+    # combined_data = pd.concat(
+    # [recent_data[labels].reset_index(drop=True), pred_df], ignore_index=True
+    # )
+
+    # # Plot the combined data
+    # plt.figure(figsize=(12, 8))
+    # for i, label in enumerate(labels):
+    # # Plot recent and predicted data together with a unique color for each label
+    # plt.plot(
+    # range(len(combined_data)),
+    # combined_data[label],
+    # color=colors[i],
+    # label=f"{label}",
+    # )
+
+    # # Plot the dashed line where prediction begins
+    # plt.axvline(
+    # x=len(recent_data) - 1, color="black", linestyle="--", label="Prediction Start"
+    # )
+
+    # # Customize the plot
+    # plt.title("Recent and Predicted Data")
+    # plt.xlabel("Days")
+    # plt.ylabel("Values")
+    # plt.legend(loc="best")
+    # plt.grid(True)
+
+    # # Save the plot as an image and return its base64 encoded string
+    # img_base64 = save_plot_to_base64()
+    # return img_base64
+
+
+def save_plot_to_base64():
+    import base64
+    from io import BytesIO
 
     # Save the plot to a BytesIO object
-    img_bytes = BytesIO()
-    plt.savefig(img_bytes, format="png")
-    img_bytes.seek(0)
+    buf = BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
 
-    # Encode the image to base64 for embedding in HTML
-    img_base64 = base64.b64encode(img_bytes.getvalue()).decode("utf-8")
-
-    # Close the plot
-    plt.close()
+    # Encode the image to base64
+    img_base64 = base64.b64encode(buf.read()).decode("utf-8")
+    buf.close()
 
     return img_base64
 
