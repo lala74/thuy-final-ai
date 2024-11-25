@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictions Results</title>
+</head>
+<body>
+    <h1>Predictions</h1>
+    <p>Here are the predictions made by the model based on your uploaded CSV file:</p>
+
+    <!-- Display the predictions as an HTML table -->
+    <div>
+        {{ predictions | safe }}
+    </div>
+
+    <h2>Prediction Plot</h2>
+    <img src="data:image/png;base64,{{ plot }}" alt="Prediction Plot">
+    
+    <br>
+    <a href="/">Upload another file</a>
+</body>
+</html>
