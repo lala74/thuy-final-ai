@@ -157,7 +157,7 @@ def plot_data_and_predictions(recent_data, predictions, labels):
         plt.show()
 
 
-def plot_data_and_predictions_to_base_64(recent_data, predictions, labels):
+def plot_data_and_predictions_with_dates(recent_data, predictions, labels, start_date):
     # Custom vibrant colors for each label
     colors = {
         "Low": "#00FFFF",  # Cyan
@@ -166,6 +166,11 @@ def plot_data_and_predictions_to_base_64(recent_data, predictions, labels):
         "Close": "#FF6347",  # Red
         "Adjusted Close": "#800080",  # Purple
     }
+
+    # Generate date range starting from start_date
+    dates = pd.date_range(
+        start=start_date, periods=len(recent_data) + len(predictions[0]), freq="D"
+    )
 
     # Combine recent data and predicted data
     pred_df = pd.DataFrame(predictions[0], columns=labels)
@@ -180,7 +185,7 @@ def plot_data_and_predictions_to_base_64(recent_data, predictions, labels):
     for label in labels:
         # Plot recent and predicted data together with a unique color for each label
         plt.plot(
-            range(len(combined_data)),
+            dates,  # Use the generated dates for the x-axis
             combined_data[label],
             color=colors[label],  # Apply custom color
             label=f"{label}",
@@ -189,60 +194,23 @@ def plot_data_and_predictions_to_base_64(recent_data, predictions, labels):
 
     # Plot the dashed line where prediction begins
     plt.axvline(
-        x=len(recent_data) - 1, color="black", linestyle="--", label="Prediction Start"
+        x=dates[len(recent_data) - 1],
+        color="black",
+        linestyle="--",
+        label="Prediction Start",
     )
 
     # Customize the plot
     plt.title("Recent and Predicted Data")
-    plt.xlabel("Days")
+    plt.xlabel("Date")
     plt.ylabel("Values")
+    plt.xticks(rotation=45)  # Rotate dates for better readability
     plt.legend(loc="best")
     plt.grid(True)
 
     # Save the plot as an image and return its base64 encoded string
     img_base64 = save_plot_to_base64()
     return img_base64
-
-    # # Define colors for each label (unique color for each label)
-    # color_map = cm.get_cmap(
-    # "tab10", len(labels)
-    # )  # Use 'tab10' colormap for distinct colors
-    # colors = [color_map(i) for i in range(len(labels))]
-
-    # # Combine recent data and predicted data
-    # pred_df = pd.DataFrame(predictions[0], columns=labels)
-    # pred_df.index += len(recent_data)  # Adjust index to follow recent data
-
-    # combined_data = pd.concat(
-    # [recent_data[labels].reset_index(drop=True), pred_df], ignore_index=True
-    # )
-
-    # # Plot the combined data
-    # plt.figure(figsize=(12, 8))
-    # for i, label in enumerate(labels):
-    # # Plot recent and predicted data together with a unique color for each label
-    # plt.plot(
-    # range(len(combined_data)),
-    # combined_data[label],
-    # color=colors[i],
-    # label=f"{label}",
-    # )
-
-    # # Plot the dashed line where prediction begins
-    # plt.axvline(
-    # x=len(recent_data) - 1, color="black", linestyle="--", label="Prediction Start"
-    # )
-
-    # # Customize the plot
-    # plt.title("Recent and Predicted Data")
-    # plt.xlabel("Days")
-    # plt.ylabel("Values")
-    # plt.legend(loc="best")
-    # plt.grid(True)
-
-    # # Save the plot as an image and return its base64 encoded string
-    # img_base64 = save_plot_to_base64()
-    # return img_base64
 
 
 def save_plot_to_base64():
@@ -321,9 +289,13 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
     )  # Assume this function is defined to return predictions
     print(f"predictions: {predictions}")
 
+    # Convert the "Date" column to datetime format
+    data["Date"] = pd.to_datetime(data["Date"], format="%d-%m-%Y")
+    start_date = data["Date"].min()  # Or you can use .iloc[0] if you want the first row
+
     # Generate the plot and encode it in base64
-    img_base64 = plot_data_and_predictions_to_base_64(
-        data, predictions, ["Low", "Open", "High", "Close", "Adjusted Close"]
+    img_base64 = plot_data_and_predictions_with_dates(
+        data, predictions, labels, start_date
     )
 
     # Return the HTML response with the plot and predictions, and pass `request`
